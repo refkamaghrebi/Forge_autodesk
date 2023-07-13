@@ -168,37 +168,48 @@ String.prototype.toBase64 = function () {
 
 var multer = require('multer');         // To handle file upload
 var upload = multer({ dest: 'tmp/' }); // Save file into local /tmp folder
-
 // Route /api/forge/datamanagement/bucket/upload
 app.get('/api/forge/datamanagement/bucket/up', upload.single('rvtFile'), function (req, res) {
-  var fs = require('fs'); // Node.js File system for reading files
-
-  var filePath = './rst_basic_sample_project.rvt'; // Replace with the actual file path
-  var filecontent = fs.readFileSync(filePath);
+    var fs = require('fs'); // Node.js File system for reading files
   
-
-  Axios({
-    method: 'PUT',
-    url: 'https://developer.api.autodesk.com/oss/v2/buckets/' + encodeURIComponent(bucketKey) + '/objects/' + encodeURIComponent('rst_basic_sample_project.rvt'),
-    headers: {
-      Authorization: 'Bearer ' + access_token,
-      'Content-Disposition': 'rst_basic_sample_project.rvt',
-      'Content-Length': filecontent.length
-    },
-    data: filecontent
-  })
-    .then(function (response) {
-      // Success
-      console.log(response);
-      var urn = response.data.objectId.toBase64();
-      res.redirect('/api/forge/modelderivative/' + urn);
-    })
-    .catch(function (error) {
-      // Failed
-      console.log(error);
-      res.send('Failed to create a new object in the bucket');
+    var filePath = './LOFT.rvt'; // Replace with the actual file path
+    console.log('oooooooooooooooooooooooooooooooooooooooooo' + filePath);
+  
+    // Utilisez fs.readFile avec une fonction de rappel
+    fs.readFile(filePath, function (err, filecontent) {
+      if (err) {
+        // En cas d'erreur de lecture du fichier
+        console.log(err);
+        res.send('Failed to read the file');
+        return;
+      }
+  
+      console.log(filecontent);
+  
+      Axios({
+        method: 'PUT',
+        url: 'https://developer.api.autodesk.com/oss/v2/buckets/' + encodeURIComponent(bucketKey) + '/objects/' + encodeURIComponent('LOFT.rvt'),
+        headers: {
+          Authorization: 'Bearer ' + access_token,
+          'Content-Disposition': 'LOFT.rvt',
+          'Content-Length': filecontent.length
+        },
+        data: filecontent,
+        maxContentLength: 50 * 1024 * 1024  // Augmenter la limite à 50 Mo
+      })
+        .then(function (response) {
+          // Success
+          console.log(response);
+          var urn = response.data.objectId.toBase64();
+          res.redirect('/api/forge/modelderivative/' + urn);
+        })
+        .catch(function (error) {
+          // Failed
+          console.log(error);
+          res.send('Failed to create a new object in the bucket');
+        });
     });
-});
+  });
 // Route /api/forge/modelderivative
 app.get('/api/forge/modelderivative/:urn', function (req, res) {
     var urn = req.params.urn;
